@@ -75,7 +75,7 @@ export function ExportFooter({ job }: ExportFooterProps) {
   const currentPreset = EXPORT_PRESETS.find((p) => p.name === selectedPreset)
 
   return (
-    <footer className="glass-panel m-5 mt-0 p-5 flex items-center justify-between flex-wrap gap-4 noise-overlay">
+    <footer className="glass-panel m-5 mt-0 p-2 flex items-center justify-between flex-wrap gap-4 noise-overlay">
       {/* Info */}
       <div className="flex items-center gap-4 text-sm">
         <div className="flex items-center gap-2">
@@ -103,22 +103,7 @@ export function ExportFooter({ job }: ExportFooterProps) {
       {/* Export controls */}
       <div className="flex items-center gap-3">
         {/* Export Preset Selector */}
-        <Select value={selectedPreset} onValueChange={setSelectedPreset}>
-          <SelectTrigger className="w-[180px] h-10 text-sm bg-white/5 border-white/10 hover:border-white/20 transition-colors">
-            <SelectValue placeholder="Export format" />
-          </SelectTrigger>
-          <SelectContent className="bg-[oklch(0.14_0.018_275)] border-white/10 backdrop-blur-xl">
-            <SelectItem value="original">Original</SelectItem>
-            {EXPORT_PRESETS.map((preset) => (
-              <SelectItem key={preset.name} value={preset.name}>
-                <span className="flex items-center gap-2">
-                  <PlatformIcon platform={preset.platform} className="w-4 h-4" />
-                  {preset.name}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+       
 
         {/* Quick export buttons */}
         <div className="hidden sm:flex gap-1.5 p-1 rounded-lg bg-white/3 border border-white/8">

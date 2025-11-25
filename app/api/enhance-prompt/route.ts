@@ -1,15 +1,24 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getGeminiClient, STYLE_PROMPTS } from "@/lib/gemini"
 
+type EnhancePayload = {
+  prompt?: string
+  style?: string
+  apiKeyOverride?: string
+}
+
 export async function POST(req: NextRequest) {
+  let payload: EnhancePayload | undefined
   try {
-    const { prompt, style = "photorealistic" } = await req.json()
+    payload = await req.json()
+    const { prompt, style = "photorealistic", apiKeyOverride } = payload
 
     if (!prompt) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 })
     }
 
-    const ai = getGeminiClient()
+    const override = typeof apiKeyOverride === "string" ? apiKeyOverride.trim() : undefined
+    const ai = getGeminiClient(override)
     const systemPrompt = STYLE_PROMPTS[style] || STYLE_PROMPTS.photorealistic
 
     const response = await ai.models.generateContent({
@@ -28,12 +37,12 @@ export async function POST(req: NextRequest) {
     })
   } catch (error) {
     console.error("Prompt enhancement failed:", error)
-    const { prompt } = await req.json().catch(() => ({ prompt: "" }))
+    const failedPrompt = payload?.prompt ?? ""
     return NextResponse.json(
       {
         error: "Failed to enhance prompt",
-        enhancedPrompt: prompt || null,
-        originalPrompt: prompt,
+        enhancedPrompt: failedPrompt || null,
+        originalPrompt: failedPrompt,
       },
       { status: 500 },
     )

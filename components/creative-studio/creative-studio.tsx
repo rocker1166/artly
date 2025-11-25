@@ -8,8 +8,19 @@ import { HistoryPanel } from "./history-panel"
 import { ExportFooter } from "./export-footer"
 import { getOrCreateDeviceId } from "@/lib/device-id"
 import type { Job, GenerationSettings } from "@/lib/types"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from "@/components/ui/dropdown-menu"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { KeyRound } from "lucide-react"
 
-export function CreativeStudio() {
+const GEMINI_KEY_STORAGE_KEY = "artly-gemini-api-key"
+
+interface CreativeStudioProps {
+  onLogoClick?: () => void
+}
+
+export function CreativeStudio({ onLogoClick }: CreativeStudioProps = {}) {
   const [deviceId, setDeviceId] = useState<string | null>(null)
   const [currentJob, setCurrentJob] = useState<Job | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -18,9 +29,17 @@ export function CreativeStudio() {
   const [jobHistory, setJobHistory] = useState<Job[]>([])
   const [historyIndex, setHistoryIndex] = useState(-1)
 
+  const [customGeminiKey, setCustomGeminiKey] = useState<string | null>(null)
+  const [pendingGeminiKey, setPendingGeminiKey] = useState("")
+  const [isValidatingGeminiKey, setIsValidatingGeminiKey] = useState(false)
+  const [geminiKeyState, setGeminiKeyState] = useState<"idle" | "valid" | "invalid">("idle")
+  const [geminiKeyMessage, setGeminiKeyMessage] = useState("")
+
   const [lastPrompt, setLastPrompt] = useState("")
   const [lastSettings, setLastSettings] = useState<GenerationSettings | null>(null)
   const [lastAssetId, setLastAssetId] = useState<string | undefined>()
+
+  const effectiveGeminiKey = useMemo(() => customGeminiKey?.trim() || undefined, [customGeminiKey])
 
   // Adjustment state
   const [adjustments, setAdjustments] = useState<AdjustmentValues>(DEFAULT_ADJUSTMENTS)
@@ -33,9 +52,27 @@ export function CreativeStudio() {
   // Edit from history state
   const [editImageUrl, setEditImageUrl] = useState<string | null>(null)
   const [editAssetId, setEditAssetId] = useState<string | null>(null)
+  const previewSectionRef = useRef<HTMLDivElement | null>(null)
+
+  const scrollToPreview = useCallback(() => {
+    if (typeof window === "undefined") return
+    if (window.innerWidth > 768) return
+    previewSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }, [previewSectionRef])
 
   useEffect(() => {
     setDeviceId(getOrCreateDeviceId())
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const storedKey = window.localStorage.getItem(GEMINI_KEY_STORAGE_KEY)
+    if (storedKey) {
+      setCustomGeminiKey(storedKey)
+      setPendingGeminiKey(storedKey)
+      setGeminiKeyState("valid")
+      setGeminiKeyMessage("Personal Gemini key loaded")
+    }
   }, [])
 
   useEffect(() => {
@@ -68,6 +105,98 @@ export function CreativeStudio() {
       }
     }
   }, [])
+
+  const handleValidateGeminiKey = useCallback(async () => {
+    const trimmedKey = pendingGeminiKey.trim()
+
+    if (!trimmedKey) {
+      setGeminiKeyState("invalid")
+      setGeminiKeyMessage("Enter an API key before saving.")
+      return
+    }
+
+    setIsValidatingGeminiKey(true)
+    setGeminiKeyState("idle")
+    setGeminiKeyMessage("")
+
+    try {
+      const res = await fetch("/api/validate-gemini-key", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ apiKey: trimmedKey }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || "Provided key is not valid.")
+      }
+
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(GEMINI_KEY_STORAGE_KEY, trimmedKey)
+      }
+      setCustomGeminiKey(trimmedKey)
+      setGeminiKeyState("valid")
+      setGeminiKeyMessage("Personal key saved and validated.")
+      toast.success("Personal Gemini API key saved.")
+    } catch (error: any) {
+      const message = error?.message || "Unable to validate API key."
+      setGeminiKeyState("invalid")
+      setGeminiKeyMessage(message)
+      toast.error(message)
+    } finally {
+      setIsValidatingGeminiKey(false)
+    }
+  }, [pendingGeminiKey])
+
+  const handleClearGeminiKey = useCallback(() => {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(GEMINI_KEY_STORAGE_KEY)
+    }
+    setCustomGeminiKey(null)
+    setPendingGeminiKey("")
+    setGeminiKeyState("idle")
+    setGeminiKeyMessage("Reverted to the shared studio key.")
+    toast.success("Personal Gemini key cleared.")
+  }, [])
+
+  const fallbackToStudioKey = useCallback(
+    (message?: string) => {
+      if (!customGeminiKey) return
+      const fallbackMessage = message || "Personal key failed. Using the studio key for this request."
+      setGeminiKeyState("invalid")
+      setGeminiKeyMessage(fallbackMessage)
+      toast.warning(fallbackMessage)
+    },
+    [customGeminiKey],
+  )
+
+  const callGeminiApiWithFallback = useCallback(
+    async (url: string, payload: Record<string, unknown>) => {
+      const sendRequest = (override?: string) =>
+        fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(override ? { ...payload, apiKeyOverride: override } : payload),
+        })
+
+      if (!effectiveGeminiKey) {
+        return sendRequest()
+      }
+
+      try {
+        const response = await sendRequest(effectiveGeminiKey)
+        if (response.ok) {
+          return response
+        }
+        fallbackToStudioKey("Personal key responded with an error. Switched to the studio key.")
+        return sendRequest()
+      } catch (error) {
+        fallbackToStudioKey("Personal key request failed. Switched to the studio key.")
+        return sendRequest()
+      }
+    },
+    [effectiveGeminiKey, fallbackToStudioKey],
+  )
 
   const hasAdjustmentChanges = useMemo(
     () => Object.keys(DEFAULT_ADJUSTMENTS).some(
@@ -145,38 +274,45 @@ export function CreativeStudio() {
     setLastAssetId(assetId)
 
     setIsGenerating(true)
+    scrollToPreview()
     try {
       let finalPrompt = prompt
       
       // Only enhance prompt for creative generation, NOT for tool operations
       if (!isToolOperation && !assetId) {
-        const enhanceRes = await fetch("/api/enhance-prompt", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt, style: settings.style }),
+        const enhanceRes = await callGeminiApiWithFallback("/api/enhance-prompt", {
+          prompt,
+          style: settings.style,
         })
-        const { enhancedPrompt } = await enhanceRes.json()
-        finalPrompt = enhancedPrompt
+
+        const enhancePayload = await enhanceRes.json().catch(() => null)
+        if (!enhanceRes.ok) {
+          throw new Error(enhancePayload?.error || "Failed to enhance prompt")
+        }
+
+        finalPrompt = enhancePayload?.enhancedPrompt || prompt
       }
       // For tool operations or image editing, use the prompt directly without enhancement
 
       // Create the generation/edit job
-      const editRes = await fetch("/api/edit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: finalPrompt,
-          originalPrompt: prompt,
-          assetId,
-          settings,
-          deviceId,
-          conversationHistory: currentJob?.conversationHistory || [],
-          thoughtSignature: currentJob?.thoughtSignature,
-          isHD,
-          isToolOperation,
-        }),
+      const editRes = await callGeminiApiWithFallback("/api/edit", {
+        prompt: finalPrompt,
+        originalPrompt: prompt,
+        assetId,
+        settings,
+        deviceId,
+        conversationHistory: currentJob?.conversationHistory || [],
+        thoughtSignature: currentJob?.thoughtSignature,
+        isHD,
+        isToolOperation,
       })
-      const job: Job = await editRes.json()
+
+      const jobPayload = await editRes.json().catch(() => null)
+      if (!editRes.ok || !jobPayload) {
+        throw new Error(jobPayload?.error || "Failed to create job")
+      }
+
+      const job: Job = jobPayload
       setCurrentJob(job)
 
       // Poll for completion
@@ -227,6 +363,7 @@ export function CreativeStudio() {
 
   const handleSelectFromHistory = (job: Job) => {
     setCurrentJob(job)
+    scrollToPreview()
   }
 
   const handleEditFromHistory = useCallback((job: Job) => {
@@ -298,27 +435,147 @@ export function CreativeStudio() {
       {/* Main layout */}
       <div className="relative z-10 flex flex-col h-screen">
         {/* Header */}
-        <header className="glass-panel m-4 mb-0 p-5 flex items-center justify-between noise-overlay">
-          <div className="flex items-center gap-4">
+        <header className="glass-panel m-4 mb-0 p-5 flex flex-wrap items-center gap-4 justify-between noise-overlay">
+          <button
+            onClick={onLogoClick}
+            className="flex items-center gap-4 group text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-2xl px-1"
+            title={onLogoClick ? "Return to Artly intro" : undefined}
+          >
             {/* Animated logo */}
-            <div className="relative group">
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[oklch(0.65_0.22_290)] to-[oklch(0.72_0.18_195)] blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
-              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-[oklch(0.65_0.22_290)] to-[oklch(0.72_0.18_195)] flex items-center justify-center shadow-lg">
-                <SparklesIcon className="w-6 h-6 text-white" />
-              </div>
-
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-[oklch(0.65_0.22_290)] to-[oklch(0.72_0.18_195)] blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
+            
             </div>
             <div>
-              <h1 className="text-xl font-display font-bold tracking-tight text-gradient">Creative Studio</h1>
+              <h1 className="text-xl font-display font-bold tracking-tight text-white">
+                {onLogoClick ? "Artly Studio" : "Creative Studio"}
+              </h1>
               <p className="text-sm text-muted-foreground font-medium">AI-Powered Image Generation & Editing</p>
             </div>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
-              <kbd className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-mono">⌘Z</kbd>
-              <span>Undo</span>
-              <kbd className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-mono ml-2">⌘⇧Z</kbd>
-              <span>Redo</span>
+          </button>
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className={`border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 ${
+                      customGeminiKey ? "text-emerald-300 border-emerald-400/40" : ""
+                    }`}
+                    aria-label="Gemini key status"
+                  >
+                    <KeyRound className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs text-left">
+                  {customGeminiKey
+                    ? "Your personal Gemini API key is active. We'll fall back to the studio key automatically if your key fails."
+                    : "Add your own Gemini API key to keep generating when the shared studio key hits rate limits."}
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="border border-white/10 bg-white/5 text-xs font-semibold tracking-wide uppercase text-white/80 hover:bg-white/10"
+                      >
+                        Gemini API
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-xs text-left">
+                    Configure a backup Gemini API key. Use it when you see rate-limit errors so you can keep working without
+                    waiting for shared quota resets.
+                  </TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-80 space-y-4 bg-background/95 p-4 backdrop-blur"
+                >
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold">Personal Gemini API key</p>
+                    <p className="text-xs text-muted-foreground">
+                      Use your own key when our shared key hits rate limits.
+                    </p>
+                  </div>
+                  <a
+                    href="https://aistudio.google.com/app/prompts/new_freeform"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Get a Gemini key from Google AI Studio ↗
+                  </a>
+                  <Input
+                    type="password"
+                    placeholder="Paste your Gemini API key"
+                    value={pendingGeminiKey}
+                    onChange={(event) => setPendingGeminiKey(event.target.value)}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="flex-1"
+                      onClick={handleValidateGeminiKey}
+                      disabled={isValidatingGeminiKey}
+                    >
+                      {isValidatingGeminiKey ? "Validating..." : "Save key"}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleClearGeminiKey}
+                      disabled={!customGeminiKey}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                  <p
+                    className={`text-xs ${
+                      geminiKeyState === "invalid"
+                        ? "text-destructive"
+                        : geminiKeyState === "valid"
+                          ? "text-emerald-400"
+                          : "text-muted-foreground"
+                    }`}
+                  >
+                    {geminiKeyMessage ||
+                      (customGeminiKey ? "Personal key is currently in use." : "Using the shared studio key.")}
+                  </p>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className={`gap-2 text-[12px] tracking-wide ${
+                      customGeminiKey
+                        ? "border-emerald-400/60 text-emerald-100 bg-emerald-400/10 hover:bg-emerald-400/20"
+                        : "border-white/20 text-white/80 bg-transparent hover:bg-white/5"
+                    }`}
+                  >
+                    <KeyRound className="size-4" />
+                    {customGeminiKey ? "Personal key" : "Studio key"}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-left text-foreground bg-card/95 backdrop-blur">
+                  <p className="font-semibold">Why add your own key?</p>
+                  <p className="text-xs opacity-80">
+                    Provide a personal Gemini API key to keep generating when the shared studio key hits rate limits or
+                    quotas.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -328,46 +585,54 @@ export function CreativeStudio() {
         </header>
 
         {/* Main content */}
-        <div className="flex-1 flex gap-5 p-5 pt-4 overflow-hidden">
-          {/* Left: Config Panel */}
-          <ConfigPanel
-            onGenerate={handleGenerate}
-            onGenerateHd={handleGenerateHd}
-            isGenerating={isGenerating}
-            currentJob={currentJob}
-            adjustments={adjustments}
-            onAdjustmentChange={handleAdjustmentChange}
-            onResetAdjustments={handleResetAdjustments}
-            onApplyAdjustments={handleApplyAdjustments}
-            isApplyingAdjustments={isApplyingAdjustments}
-            hasAdjustmentChanges={hasAdjustmentChanges}
-            downloadUrl={downloadUrl}
-            applyError={applyError}
-            editImageUrl={editImageUrl}
-            editAssetId={editAssetId}
-            onClearEditImage={clearEditImage}
-          />
+        <div className="flex-1 flex flex-col gap-5 p-4 lg:p-5 lg:pt-4 overflow-y-auto lg:overflow-hidden">
+          <div className="flex flex-col gap-5 lg:flex-row flex-1 min-h-0 lg:h-full">
+            <div className="order-1 lg:order-1 w-full lg:max-w-[420px] lg:overflow-y-auto lg:h-full">
+              <ConfigPanel
+                onGenerate={handleGenerate}
+                onGenerateHd={handleGenerateHd}
+                isGenerating={isGenerating}
+                currentJob={currentJob}
+                adjustments={adjustments}
+                onAdjustmentChange={handleAdjustmentChange}
+                onResetAdjustments={handleResetAdjustments}
+                onApplyAdjustments={handleApplyAdjustments}
+                isApplyingAdjustments={isApplyingAdjustments}
+                hasAdjustmentChanges={hasAdjustmentChanges}
+                downloadUrl={downloadUrl}
+                applyError={applyError}
+                editImageUrl={editImageUrl}
+                editAssetId={editAssetId}
+                onClearEditImage={clearEditImage}
+              />
+            </div>
 
-          {/* Center: Preview Canvas */}
-          <PreviewCanvas
-            job={currentJob}
-            isGenerating={isGenerating}
-            onUndo={handleUndo}
-            onRedo={handleRedo}
-            canUndo={historyIndex > 0}
-            canRedo={historyIndex < jobHistory.length - 1}
-            onRetry={handleRetry}
-            adjustments={adjustments}
-            appliedImageUrl={appliedImageUrl}
-          />
+            <div
+              ref={previewSectionRef}
+              className="order-2 lg:order-2 flex-1 min-h-[360px] lg:h-full"
+            >
+              <PreviewCanvas
+                job={currentJob}
+                isGenerating={isGenerating}
+                onUndo={handleUndo}
+                onRedo={handleRedo}
+                canUndo={historyIndex > 0}
+                canRedo={historyIndex < jobHistory.length - 1}
+                onRetry={handleRetry}
+                adjustments={adjustments}
+                appliedImageUrl={appliedImageUrl}
+              />
+            </div>
 
-          {/* Right: History Panel */}
-          <HistoryPanel 
-            deviceId={deviceId} 
-            onSelect={handleSelectFromHistory} 
-            onEdit={handleEditFromHistory}
-            refreshKey={historyRefreshKey} 
-          />
+            <div className="order-3 lg:order-3 w-full lg:w-72 lg:self-stretch lg:overflow-y-auto lg:h-full">
+              <HistoryPanel 
+                deviceId={deviceId} 
+                onSelect={handleSelectFromHistory} 
+                onEdit={handleEditFromHistory}
+                refreshKey={historyRefreshKey} 
+              />
+            </div>
+          </div>
         </div>
 
         {/* Footer */}

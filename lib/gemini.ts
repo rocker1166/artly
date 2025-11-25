@@ -10,7 +10,12 @@ function requireGeminiKey() {
 
 let aiInstance: GoogleGenAI | null = null
 
-export function getGeminiClient(): GoogleGenAI {
+export function getGeminiClient(customKey?: string): GoogleGenAI {
+  const trimmedKey = customKey?.trim()
+  if (trimmedKey) {
+    return new GoogleGenAI({ apiKey: trimmedKey })
+  }
+
   if (!aiInstance) {
     aiInstance = new GoogleGenAI({
       apiKey: requireGeminiKey(),

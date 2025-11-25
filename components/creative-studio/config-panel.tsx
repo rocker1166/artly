@@ -253,7 +253,7 @@ export function ConfigPanel({
   }
 
   return (
-    <div className="w-[400px] flex-shrink-0 glass-panel p-6 flex flex-col gap-5 overflow-y-auto noise-overlay">
+    <div className="w-full lg:w-[400px] flex-shrink-0 glass-panel p-6 flex flex-col gap-5 overflow-y-auto noise-overlay">
       {/* Quick Presets */}
       <div className="space-y-3">
         <Label className="text-sm font-semibold tracking-wide text-foreground/90 uppercase">Quick Presets</Label>

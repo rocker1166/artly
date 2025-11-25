@@ -64,7 +64,7 @@ export function HistoryPanel({ deviceId, onSelect, onEdit, refreshKey }: History
   }
 
   return (
-    <div className="w-80 flex-shrink-0 glass-panel p-6 flex flex-col overflow-hidden noise-overlay">
+    <div className="w-full lg:w-72 flex-shrink-0 glass-panel p-6 flex flex-col overflow-hidden noise-overlay">
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-sm font-semibold tracking-wide text-foreground/90 uppercase">History</h2>
         <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/8 text-xs font-medium text-muted-foreground">

@@ -14,6 +14,7 @@ type EditRequestPayload = {
   thoughtSignature?: string
   isHD?: boolean
   isToolOperation?: boolean
+  apiKeyOverride?: string
 }
 
 export async function POST(req: NextRequest) {
@@ -28,6 +29,7 @@ export async function POST(req: NextRequest) {
       thoughtSignature,
       isHD = false,
       isToolOperation = false,
+      apiKeyOverride,
     } = (await req.json()) as EditRequestPayload
 
     if (!prompt || !deviceId) {
@@ -60,6 +62,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Process in background
+    const keyOverride = typeof apiKeyOverride === "string" ? apiKeyOverride.trim() : undefined
+
     processImageGeneration(
       jobId,
       finalPrompt,
@@ -68,6 +72,7 @@ export async function POST(req: NextRequest) {
       conversationHistory,
       thoughtSignature,
       isHD,
+      keyOverride,
     )
 
     return NextResponse.json({
@@ -95,9 +100,10 @@ async function processImageGeneration(
   conversationHistory: ConversationTurn[] = [],
   thoughtSignature?: string,
   isHD = false,
+  apiKeyOverride?: string,
 ) {
   const supabase = createServerSupabaseClient()
-  const ai = getGeminiClient()
+  const ai = getGeminiClient(apiKeyOverride)
 
   const normalizedHistory = Array.isArray(conversationHistory) ? conversationHistory : []
   let sourceAssetUrl: string | undefined

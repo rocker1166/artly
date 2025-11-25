@@ -1,10 +1,12 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { toast } from "sonner"
 import type { Job } from "@/lib/types"
 import type { AdjustmentValues } from "./config-panel"
 import { DEFAULT_ADJUSTMENTS } from "./config-panel"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface PreviewCanvasProps {
   job: Job | null
@@ -42,7 +44,7 @@ export function PreviewCanvas({
 }: PreviewCanvasProps) {
   const [progressMessage, setProgressMessage] = useState(PROGRESS_MESSAGES[0])
   const [messageIndex, setMessageIndex] = useState(0)
-  const [isPromptOpen, setIsPromptOpen] = useState(true)
+  const [isPromptModalOpen, setIsPromptModalOpen] = useState(false)
   const [isLightboxOpen, setIsLightboxOpen] = useState(false)
 
   useEffect(() => {
@@ -76,6 +78,18 @@ export function PreviewCanvas({
     setProgressMessage(job?.progressMessage || PROGRESS_MESSAGES[messageIndex])
   }, [messageIndex, job?.progressMessage])
 
+  useEffect(() => {
+    if (!job?.enhancedPrompt) {
+      setIsPromptModalOpen(false)
+    }
+  }, [job?.enhancedPrompt])
+
+  const handleCopyEnhancedPrompt = useCallback(() => {
+    if (!job?.enhancedPrompt) return
+    navigator.clipboard.writeText(job.enhancedPrompt)
+    toast.success("Prompt copied to clipboard!")
+  }, [job?.enhancedPrompt])
+
   const currentImageSrc = appliedImageUrl || job?.finalUrl || job?.previewUrl || ""
   const hasAdjustmentsChanges = useMemo(
     () => Object.keys(DEFAULT_ADJUSTMENTS).some((key) => adjustments[key as AdjustmentKey] !== DEFAULT_ADJUSTMENTS[key as AdjustmentKey]),
@@ -84,17 +98,17 @@ export function PreviewCanvas({
   const cssFilter = useMemo(() => buildCssFilter(adjustments), [adjustments])
 
   return (
-    <div className="flex-1 glass-panel p-6 flex flex-col noise-overlay">
+    <div className="h-full glass-panel p-6 flex flex-col noise-overlay">
       {/* Header with status and undo/redo */}
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-sm font-semibold tracking-wide text-foreground/90 uppercase">Preview</h2>
         <div className="flex items-center gap-3">
           {job?.enhancedPrompt && (
             <button
-              onClick={() => setIsPromptOpen((prev) => !prev)}
+              onClick={() => setIsPromptModalOpen(true)}
               className="px-3 py-1.5 text-xs font-semibold rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-all"
             >
-              Enhanced Prompt {isPromptOpen ? "▾" : "▸"}
+              Enhanced Prompt
             </button>
           )}
           {/* Undo/Redo buttons */}
@@ -137,23 +151,24 @@ export function PreviewCanvas({
         
         {/* Generating state with animated message */}
         {isGenerating && !job?.previewUrl && (
-          <div className="relative z-10 flex flex-col items-center gap-6">
-            <div className="relative">
-              {/* Outer glow */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[oklch(0.65_0.22_290)] to-[oklch(0.72_0.18_195)] blur-xl opacity-30 animate-pulse" />
-              {/* Outer ring */}
-              <div className="w-20 h-20 rounded-full border-2 border-[oklch(0.72_0.18_195/0.3)] border-t-[oklch(0.72_0.18_195)] animate-spin" />
-              {/* Inner ring */}
+          <div className="relative z-10 flex flex-col lg:flex-row items-center gap-6 w-full px-4">
+            <div className="relative flex h-24 w-24 items-center justify-center">
+              <div className="absolute inset-0 rounded-full bg-linear-to-r from-[oklch(0.65_0.22_290)/50] to-[oklch(0.72_0.18_195)/50] blur-2xl animate-pulse" />
+              <div className="w-16 h-16 rounded-full border-2 border-white/20 border-t-[oklch(0.72_0.18_195)] animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
                 <div
-                  className="w-10 h-10 rounded-full border-2 border-[oklch(0.65_0.22_290/0.3)] border-b-[oklch(0.65_0.22_290)] animate-spin"
+                  className="w-10 h-10 rounded-full border-2 border-white/10 border-b-[oklch(0.65_0.22_290)] animate-spin"
                   style={{ animationDirection: "reverse", animationDuration: "0.8s" }}
                 />
               </div>
             </div>
-            <div className="text-center">
-              <p className="text-base font-medium text-foreground/80">{progressMessage}</p>
-              <p className="text-sm text-muted-foreground mt-2">This may take a moment</p>
+            <div className="text-center lg:text-left space-y-1 max-w-xl">
+              <p className="text-sm font-medium uppercase tracking-[0.35em] text-white/55">Generating</p>
+              <p className="text-lg font-semibold text-white">{progressMessage}</p>
+              <p className="text-sm text-white/45">
+                We’re translating your prompt into pixels and refining every highlight. Hang tight while we render the
+                final image.
+              </p>
             </div>
           </div>
         )}
@@ -229,38 +244,43 @@ export function PreviewCanvas({
         )}
       </div>
 
-      {/* Enhanced prompt display */}
-      {job?.enhancedPrompt && isPromptOpen && (
-        <div className="mt-5 p-4 rounded-xl bg-black/20 border border-white/8 backdrop-blur-sm">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.72_0.18_195)]" />
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Enhanced Prompt</p>
+      {/* Enhanced prompt modal */}
+      {job?.enhancedPrompt && (
+        <Dialog open={isPromptModalOpen} onOpenChange={setIsPromptModalOpen}>
+          <DialogContent className="bg-black/85 border border-white/10 text-foreground backdrop-blur-2xl">
+            <DialogHeader>
+              <DialogTitle>Enhanced Prompt</DialogTitle>
+              <DialogDescription>Model-optimized version used for this image.</DialogDescription>
+            </DialogHeader>
+            <div className="rounded-lg border border-white/5 bg-white/[0.03] p-4 max-h-[50vh] overflow-y-auto">
+              <p className="text-sm leading-relaxed text-white/90">{job.enhancedPrompt}</p>
             </div>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(job.enhancedPrompt || "")
-                toast.success("Prompt copied to clipboard!")
-              }}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-[oklch(0.8_0.15_195)] hover:bg-[oklch(0.72_0.18_195/0.15)] transition-colors"
-            >
-              <CopyIcon className="w-3.5 h-3.5" />
-              Copy
-            </button>
-          </div>
-          <p className="text-sm text-foreground/80 leading-relaxed">{job.enhancedPrompt}</p>
-        </div>
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={handleCopyEnhancedPrompt}
+                className="border-white/10 bg-white/10 hover:bg-white/20"
+              >
+                Copy Prompt
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
 
       {isLightboxOpen && currentImageSrc && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-lg flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4">
           <button
             className="absolute top-6 right-6 text-white/70 hover:text-white"
             onClick={() => setIsLightboxOpen(false)}
           >
             <XIcon className="w-6 h-6" />
           </button>
-          <img src={currentImageSrc} alt="Preview large" className="max-h-[90vh] max-w-[90vw] object-contain rounded-2xl" />
+          <img
+            src={currentImageSrc}
+            alt="Preview large"
+            className="max-h-[95vh] max-w-[95vw] object-contain rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+          />
         </div>
       )}
     </div>
@@ -288,14 +308,6 @@ function StatusBadge({ status }: { status?: Job["status"] }) {
       )}
       {label}
     </span>
-  )
-}
-
-function CopyIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-    </svg>
   )
 }
 

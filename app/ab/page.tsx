@@ -10,7 +10,7 @@ export default function DemoOne() {
   return (
     <>
       <div className={`transition-opacity duration-500 ${showHero ? "pointer-events-none opacity-0" : "opacity-100"}`}>
-        <CreativeStudio />
+        <CreativeStudio onLogoClick={() => setShowHero(true)} />
       </div>
       {showHero && <ArtlyHero onEnter={() => setShowHero(false)} />}
     </>

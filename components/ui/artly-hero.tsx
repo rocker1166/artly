@@ -51,7 +51,7 @@ export function ArtlyHero({ onEnter }: ArtlyHeroProps) {
       <div className="relative z-10 flex h-full items-center justify-center px-4 py-12 md:px-8">
         <div
           ref={cardRef}
-          className={`w-full max-w-4xl rounded-[32px] border border-white/10 bg-white/10/70 p-8 text-center backdrop-blur-2xl shadow-[0_25px_120px_rgba(0,0,0,0.65)] transition-all duration-700 ${
+          className={`w-full max-w-4xl rounded-[32px] border border-white/10 bg-white/10/70 p-8 text-center backdrop-blur-1xl shadow-[0_25px_120px_rgba(0,0,0,0.65)] transition-all duration-700 ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
           }`}
         >
