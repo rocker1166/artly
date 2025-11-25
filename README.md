@@ -9,6 +9,15 @@ A modern, full-stack web application for creating and editing images using Googl
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript)
 ![Supabase](https://img.shields.io/badge/Supabase-Latest-green?logo=supabase)
 
+<img width="1909" height="863" alt="image" src="https://github.com/user-attachments/assets/089ef78f-7896-4778-8655-1149e8411c02" />
+#before
+<img width="1916" height="857" alt="image" src="https://github.com/user-attachments/assets/d86a29a4-a567-4101-84ca-4962cb7e50ea" />
+#After
+<img width="1908" height="852" alt="image" src="https://github.com/user-attachments/assets/646f6906-3f71-4a07-aaee-f6d9b9d2468f" />
+#in browser adjustment
+<img width="1901" height="827" alt="image" src="https://github.com/user-attachments/assets/115800bc-b78b-468d-8d75-decaf4314b0c" />
+
+
 ## ✨ Features
 
 ### 🤖 AI-Powered Generation
