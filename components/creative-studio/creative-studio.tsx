@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react"
+import { toast, Toaster } from "sonner"
 import { ConfigPanel, DEFAULT_ADJUSTMENTS, type AdjustmentValues, type AdjustmentKey } from "./config-panel"
 import { PreviewCanvas } from "./preview-canvas"
 import { HistoryPanel } from "./history-panel"
@@ -28,6 +29,10 @@ export function CreativeStudio() {
   const [applyError, setApplyError] = useState<string | null>(null)
   const [isApplyingAdjustments, setIsApplyingAdjustments] = useState(false)
   const appliedObjectUrlRef = useRef<string | null>(null)
+
+  // Edit from history state
+  const [editImageUrl, setEditImageUrl] = useState<string | null>(null)
+  const [editAssetId, setEditAssetId] = useState<string | null>(null)
 
   useEffect(() => {
     setDeviceId(getOrCreateDeviceId())
@@ -107,6 +112,7 @@ export function CreativeStudio() {
           if (!blob) {
             setApplyError("Unable to encode adjusted image.")
             setIsApplyingAdjustments(false)
+            toast.error("Failed to apply adjustments")
             return
           }
           if (appliedObjectUrlRef.current) {
@@ -118,6 +124,7 @@ export function CreativeStudio() {
           setDownloadUrl(url)
           setIsApplyingAdjustments(false)
           setAdjustments(DEFAULT_ADJUSTMENTS)
+          toast.success("Adjustments applied! Click Download to save.")
         },
         "image/png",
         0.95
@@ -189,6 +196,13 @@ export function CreativeStudio() {
       if (job.status === "done" || job.status === "failed") {
         setIsGenerating(false)
         setHistoryRefreshKey((k) => k + 1)
+        
+        // Show toast notification
+        if (job.status === "done") {
+          toast.success("Image generated successfully!")
+        } else {
+          toast.error("Generation failed. Please try again.")
+        }
       } else {
         setTimeout(poll, 2000)
       }
@@ -214,6 +228,19 @@ export function CreativeStudio() {
   const handleSelectFromHistory = (job: Job) => {
     setCurrentJob(job)
   }
+
+  const handleEditFromHistory = useCallback((job: Job) => {
+    // Set the image for editing in config panel
+    if (job.previewUrl) {
+      setEditImageUrl(job.previewUrl)
+      setEditAssetId(job.assetId || null)
+    }
+  }, [])
+
+  const clearEditImage = useCallback(() => {
+    setEditImageUrl(null)
+    setEditAssetId(null)
+  }, [])
 
   const handleUndo = useCallback(() => {
     if (historyIndex > 0) {
@@ -248,6 +275,9 @@ export function CreativeStudio() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Toast notifications */}
+      <Toaster position="top-right" richColors closeButton />
+      
       {/* Background gradient */}
       <div className="fixed inset-0 bg-gradient-to-br from-violet-950/20 via-background to-cyan-950/20 pointer-events-none" />
 
@@ -289,6 +319,9 @@ export function CreativeStudio() {
             hasAdjustmentChanges={hasAdjustmentChanges}
             downloadUrl={downloadUrl}
             applyError={applyError}
+            editImageUrl={editImageUrl}
+            editAssetId={editAssetId}
+            onClearEditImage={clearEditImage}
           />
 
           {/* Center: Preview Canvas */}
@@ -305,7 +338,12 @@ export function CreativeStudio() {
           />
 
           {/* Right: History Panel */}
-          <HistoryPanel deviceId={deviceId} onSelect={handleSelectFromHistory} refreshKey={historyRefreshKey} />
+          <HistoryPanel 
+            deviceId={deviceId} 
+            onSelect={handleSelectFromHistory} 
+            onEdit={handleEditFromHistory}
+            refreshKey={historyRefreshKey} 
+          />
         </div>
 
         {/* Footer */}

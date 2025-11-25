@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Job, ExportPreset } from "@/lib/types"
@@ -45,6 +46,7 @@ export function ExportFooter({ job }: ExportFooterProps) {
       }
     } catch (error) {
       console.error("Download failed:", error)
+      toast.error("Download failed. Please try again.")
     } finally {
       setIsExporting(false)
     }
@@ -59,12 +61,14 @@ export function ExportFooter({ job }: ExportFooterProps) {
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
+    toast.success("Image downloaded!")
   }
 
   const handleCopyLink = async () => {
     if (!job?.finalUrl) return
     await navigator.clipboard.writeText(job.finalUrl)
     setCopied(true)
+    toast.success("Link copied to clipboard!")
     setTimeout(() => setCopied(false), 2000)
   }
 

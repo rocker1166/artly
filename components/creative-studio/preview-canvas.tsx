@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { toast } from "sonner"
 import type { Job } from "@/lib/types"
 import type { AdjustmentValues } from "./config-panel"
 import { DEFAULT_ADJUSTMENTS } from "./config-panel"
@@ -197,7 +198,10 @@ export function PreviewCanvas({
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs text-muted-foreground">Enhanced Prompt</p>
             <button
-              onClick={() => navigator.clipboard.writeText(job.enhancedPrompt || "")}
+              onClick={() => {
+                navigator.clipboard.writeText(job.enhancedPrompt || "")
+                toast.success("Prompt copied to clipboard!")
+              }}
               className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
             >
               Copy

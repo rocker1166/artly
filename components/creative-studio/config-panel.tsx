@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -44,6 +44,9 @@ interface ConfigPanelProps {
   hasAdjustmentChanges: boolean
   downloadUrl: string | null
   applyError: string | null
+  editImageUrl?: string | null
+  editAssetId?: string | null
+  onClearEditImage?: () => void
 }
 
 const PLACEHOLDER_PROMPTS = [
@@ -68,6 +71,9 @@ export function ConfigPanel({
   hasAdjustmentChanges,
   downloadUrl,
   applyError,
+  editImageUrl,
+  editAssetId,
+  onClearEditImage,
 }: ConfigPanelProps) {
   const [prompt, setPrompt] = useState("")
   const [settings, setSettings] = useState<GenerationSettings>({
@@ -96,6 +102,15 @@ export function ConfigPanel({
   const [activeTab, setActiveTab] = useState("prompt")
 
   const [promptSuggestions, setPromptSuggestions] = useState<string[]>(PLACEHOLDER_PROMPTS.slice(0, 3))
+
+  // Load edit image from history when provided
+  useEffect(() => {
+    if (editImageUrl) {
+      setUploadedPreview(editImageUrl)
+      setUploadedAssetId(editAssetId || "from-history")
+      setActiveTab("prompt") // Switch to prompt tab for editing
+    }
+  }, [editImageUrl, editAssetId])
 
   const hasSourceImage = Boolean(uploadedAssetId)
   const trimmedPrompt = prompt.trim()
@@ -227,6 +242,7 @@ export function ConfigPanel({
   const clearUpload = () => {
     setUploadedAssetId(null)
     setUploadedPreview(null)
+    onClearEditImage?.()
   }
 
   const updateEditTool = <K extends keyof typeof settings.editTools>(key: K, value: (typeof settings.editTools)[K]) => {
