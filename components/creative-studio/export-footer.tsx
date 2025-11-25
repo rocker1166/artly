@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Job, ExportPreset } from "@/lib/types"
 import { EXPORT_PRESETS } from "@/lib/types"
+import Link from "next/link"
 
 interface ExportFooterProps {
   job: Job | null
@@ -82,6 +83,9 @@ export function ExportFooter({ job }: ExportFooterProps) {
           <div className="w-2 h-2 rounded-full bg-[oklch(0.68_0.2_150)] animate-pulse" />
           <span className="text-muted-foreground font-medium">Powered by</span>
           <span className="text-gradient font-semibold">Gemini 3 Pro</span>
+          <Link href="https://github.com/rocker1166" target="_blank" >
+          <span className="text-muted-foreground font-medium"> Suman Jana </span> </Link>
+          
         </div>
         {job && (
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/8">
