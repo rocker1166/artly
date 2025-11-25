@@ -52,6 +52,18 @@ export function HistoryPanel({ deviceId, onSelect, onEdit, refreshKey }: History
     }
   }
 
+  const handleCopyPrompt = async (e: React.MouseEvent, job: Job) => {
+    e.stopPropagation()
+    if (!job.originalPrompt) return
+    
+    try {
+      await navigator.clipboard.writeText(job.originalPrompt)
+      toast.success("Prompt copied to clipboard!")
+    } catch (error) {
+      toast.error("Failed to copy prompt")
+    }
+  }
+
   const handleEdit = (e: React.MouseEvent, job: Job) => {
     e.stopPropagation()
     onEdit(job)
@@ -124,6 +136,13 @@ export function HistoryPanel({ deviceId, onSelect, onEdit, refreshKey }: History
                     <EditIcon className="w-4 h-4 text-white" />
                   </button>
                   <button
+                    onClick={(e) => handleCopyPrompt(e, job)}
+                    className="p-2.5 rounded-xl bg-[oklch(0.75_0.18_85/0.8)] backdrop-blur-sm border border-[oklch(0.75_0.18_85/0.5)] hover:bg-[oklch(0.75_0.18_85)] hover:scale-105 transition-all"
+                    title="Copy prompt"
+                  >
+                    <CopyIcon className="w-4 h-4 text-white" />
+                  </button>
+                  <button
                     onClick={(e) => handleDownload(e, job)}
                     className="p-2.5 rounded-xl bg-[oklch(0.65_0.22_290/0.8)] backdrop-blur-sm border border-[oklch(0.65_0.22_290/0.5)] hover:bg-[oklch(0.65_0.22_290)] hover:scale-105 transition-all"
                     title="Download image"
@@ -192,6 +211,18 @@ function DownloadIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+    </svg>
+  )
+}
+
+function CopyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+      />
     </svg>
   )
 }

@@ -18,6 +18,7 @@ import type {
   OutputFormat,
   BrushSize,
   QuickPreset,
+  PresetType,
 } from "@/lib/types"
 import { QUICK_PRESETS } from "@/lib/types"
 
@@ -137,12 +138,26 @@ export function ConfigPanel({
   const previewDisabled = isGenerating || !canSubmit
 
   const applyPreset = (preset: QuickPreset) => {
+    // Define prompt templates for each preset with placeholders
+    const promptTemplates: Record<PresetType, string> = {
+      ecommerce: "A professional product photo of {your product details}, clean white background, soft studio lighting, high-end commercial photography style",
+      social: "Create a {describe your scene or subject}, vibrant colors, eye-catching composition perfect for social media engagement",
+      poster: "Design a {describe the poster theme}, bold and dramatic visual style with {color scheme or mood}, space for text overlay",
+      avatar: "Professional headshot portrait of {person description}, clean background, studio lighting, professional photography",
+      custom: ""
+    }
+    
     setSettings((prev) => ({
       ...prev,
       preset: preset.id,
       aspectRatio: preset.aspectRatio,
       style: preset.style,
     }))
+    
+    // Set the prompt template
+    setPrompt(promptTemplates[preset.id] || "")
+    
+    // Update suggestions
     setPromptSuggestions(preset.suggestedPrompts)
   }
 
@@ -174,6 +189,8 @@ export function ConfigPanel({
       const data = await res.json()
       setUploadedAssetId(data.assetId)
       setUploadedPreview(data.url)
+      // Auto-switch to Tools tab when image is uploaded
+      setActiveTab("tools")
     } catch (error) {
       console.error("Upload failed:", error)
     } finally {
@@ -195,6 +212,8 @@ export function ConfigPanel({
         setUploadedAssetId(data.assetId)
         setUploadedPreview(data.url)
         setUrlInput("")
+        // Auto-switch to Tools tab when image is loaded
+        setActiveTab("tools")
       }
     } catch (error) {
       console.error("URL upload failed:", error)
@@ -511,36 +530,7 @@ export function ConfigPanel({
                 )}
               </div>
 
-              {/* Inpainting */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-sm font-medium">Inpainting Mode</Label>
-                    <p className="text-xs text-muted-foreground">Brush to mark edit areas</p>
-                  </div>
-                  <Switch
-                    checked={settings.editTools.inpaintingEnabled}
-                    onCheckedChange={(v) => updateEditTool("inpaintingEnabled", v)}
-                  />
-                </div>
-                {settings.editTools.inpaintingEnabled && (
-                  <div className="flex gap-2">
-                    {(["small", "medium", "large"] as BrushSize[]).map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => updateEditTool("brushSize", size)}
-                        className={`flex-1 py-2 text-xs rounded-lg border capitalize transition-all ${
-                          settings.editTools.brushSize === size
-                            ? "border-amber-500 bg-amber-500/20 text-amber-400"
-                            : "border-white/10 hover:border-white/20"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+           
 
               {/* Color Swap */}
               <div className="space-y-2">

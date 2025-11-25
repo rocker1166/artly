@@ -6,6 +6,7 @@ import { ConfigPanel, DEFAULT_ADJUSTMENTS, type AdjustmentValues, type Adjustmen
 import { PreviewCanvas } from "./preview-canvas"
 import { HistoryPanel } from "./history-panel"
 import { ExportFooter } from "./export-footer"
+import { PromptGalleryModal } from "./prompt-gallery-modal"
 import { getOrCreateDeviceId } from "@/lib/device-id"
 import type { Job, GenerationSettings } from "@/lib/types"
 import { Button } from "@/components/ui/button"
@@ -38,6 +39,8 @@ export function CreativeStudio({ onLogoClick }: CreativeStudioProps = {}) {
   const [lastPrompt, setLastPrompt] = useState("")
   const [lastSettings, setLastSettings] = useState<GenerationSettings | null>(null)
   const [lastAssetId, setLastAssetId] = useState<string | undefined>()
+
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false)
 
   const effectiveGeminiKey = useMemo(() => customGeminiKey?.trim() || undefined, [customGeminiKey])
 
@@ -435,34 +438,50 @@ export function CreativeStudio({ onLogoClick }: CreativeStudioProps = {}) {
       {/* Main layout */}
       <div className="relative z-10 flex flex-col h-screen">
         {/* Header */}
-        <header className="glass-panel m-4 mb-0 p-5 flex flex-wrap items-center gap-4 justify-between noise-overlay">
-          <button
-            onClick={onLogoClick}
-            className="flex items-center gap-4 group text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-2xl px-1"
-            title={onLogoClick ? "Return to Artly intro" : undefined}
-          >
-            {/* Animated logo */}
-            <div className="relative">
-              <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-[oklch(0.65_0.22_290)] to-[oklch(0.72_0.18_195)] blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
+        <header className="glass-panel  sm:m-4 mb-0 p-1 sm:p-5 noise-overlay">
+          <div className="flex flex-wrap items-center gap-1 sm:gap-42 justify-between">
+            <button
+              onClick={onLogoClick}
+              className="flex items-center gap-2 sm:gap-4 group text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 rounded-2xl px-1"
+              title={onLogoClick ? "Return to Artly intro" : undefined}
+            >
+              {/* Animated logo */}
+              <div className="relative">
+                <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-[oklch(0.65_0.22_290)] to-[oklch(0.72_0.18_195)] blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
+              </div>
+              <div>
+                <h1 className="text-lg sm:text-xl font-display font-bold tracking-tight text-white">
+                  {onLogoClick ? "Artly Studio" : "Creative Studio"}
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground font-medium hidden sm:block">AI-Powered Image Generation & Editing</p>
+              </div>
+            </button>
             
-            </div>
-            <div>
-              <h1 className="text-xl font-display font-bold tracking-tight text-white">
-                {onLogoClick ? "Artly Studio" : "Creative Studio"}
-              </h1>
-              <p className="text-sm text-muted-foreground font-medium">AI-Powered Image Generation & Editing</p>
-            </div>
-          </button>
-          <div className="flex items-center gap-3 flex-wrap justify-end">
-            <div className="flex items-center gap-2">
+            {/* Right side controls */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
+              {/* Prompt Gallery Button */}
               <Tooltip>
-               
-                <TooltipContent side="bottom" className="max-w-xs text-left">
-                  {customGeminiKey
-                    ? "Your personal Gemini API key is active. We'll fall back to the studio key automatically if your key fails."
-                    : "Add your own Gemini API key to keep generating when the shared studio key hits rate limits."}
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsGalleryOpen(true)}
+                    className="gap-1.5 sm:gap-2 text-[11px] sm:text-[12px] tracking-wide border-white/20 text-white/80 bg-transparent hover:bg-white/5 px-2 sm:px-3"
+                  >
+                    <GalleryIcon className="size-3.5 sm:size-4" />
+                    <span className="hidden xs:inline">Prompt Gallery</span>
+                    <span className="xs:hidden">Gallery</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-xs text-left text-foreground bg-card/95 backdrop-blur">
+                  <p className="font-semibold">View your creations</p>
+                  <p className="text-xs opacity-80">
+                    Browse all your generated images and copy prompts with a single click.
+                  </p>
                 </TooltipContent>
               </Tooltip>
+              
               <DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -471,9 +490,10 @@ export function CreativeStudio({ onLogoClick }: CreativeStudioProps = {}) {
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="border border-white/10 bg-white/5 text-xs font-semibold tracking-wide uppercase text-white/80 hover:bg-white/10"
+                        className="border border-white/10 bg-white/5 text-[10px] sm:text-xs font-semibold tracking-wide uppercase text-white/80 hover:bg-white/10 px-2 sm:px-3"
                       >
-                        Gemini API
+                        <span className="hidden xs:inline">Gemini API</span>
+                        <span className="xs:hidden">API</span>
                       </Button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
@@ -540,20 +560,21 @@ export function CreativeStudio({ onLogoClick }: CreativeStudioProps = {}) {
                   </p>
                 </DropdownMenuContent>
               </DropdownMenu>
+              
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
-                    className={`gap-2 text-[12px] tracking-wide ${
+                    className={`gap-1.5 sm:gap-2 text-[10px] sm:text-[12px] tracking-wide px-2 sm:px-3 ${
                       customGeminiKey
                         ? "border-emerald-400/60 text-emerald-100 bg-emerald-400/10 hover:bg-emerald-400/20"
                         : "border-white/20 text-white/80 bg-transparent hover:bg-white/5"
                     }`}
                   >
-                    <KeyRound className="size-4" />
-                    {customGeminiKey ? "Personal key" : "Studio key"}
+                    <KeyRound className="size-3.5 sm:size-4" />
+                    <span className="hidden sm:inline">{customGeminiKey ? "Personal key" : "Studio key"}</span>
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent className="max-w-xs text-left text-foreground bg-card/95 backdrop-blur">
@@ -564,16 +585,17 @@ export function CreativeStudio({ onLogoClick }: CreativeStudioProps = {}) {
                   </p>
                 </TooltipContent>
               </Tooltip>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-xs text-muted-foreground font-mono">{deviceId.slice(0, 8)}</span>
+              
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full bg-white/5 border border-white/10">
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[10px] sm:text-xs text-muted-foreground font-mono">{deviceId.slice(0, 8)}</span>
+              </div>
             </div>
           </div>
         </header>
 
         {/* Main content */}
-        <div className="flex-1 flex flex-col gap-5 p-4 lg:p-5 lg:pt-4 overflow-y-auto lg:overflow-hidden">
+        <div className="flex-1 flex flex-col gap-5 p-2 sm:p-4 lg:p-5 pt-2 lg:pt-2 overflow-y-auto lg:overflow-hidden">
           <div className="flex flex-col gap-5 lg:flex-row flex-1 min-h-0 lg:h-full">
             <div className="order-1 lg:order-1 w-full lg:max-w-[420px] lg:overflow-y-auto lg:h-full">
               <ConfigPanel
@@ -626,6 +648,15 @@ export function CreativeStudio({ onLogoClick }: CreativeStudioProps = {}) {
         {/* Footer */}
         <ExportFooter job={currentJob} />
       </div>
+
+      {/* Prompt Gallery Modal */}
+      {deviceId && (
+        <PromptGalleryModal
+          open={isGalleryOpen}
+          onOpenChange={setIsGalleryOpen}
+          deviceId={deviceId}
+        />
+      )}
     </div>
   )
 }
@@ -653,6 +684,18 @@ function SparklesIcon({ className }: { className?: string }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+      />
+    </svg>
+  )
+}
+
+function GalleryIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"
       />
     </svg>
   )
