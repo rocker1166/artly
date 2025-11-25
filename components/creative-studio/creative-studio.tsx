@@ -276,35 +276,58 @@ export function CreativeStudio() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Toast notifications */}
-      <Toaster position="top-right" richColors closeButton />
+      <Toaster 
+        position="top-right" 
+        richColors 
+        closeButton 
+        toastOptions={{
+          style: {
+            background: 'rgba(255, 255, 255, 0.03)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+          },
+        }}
+      />
       
-      {/* Background gradient */}
-      <div className="fixed inset-0 bg-gradient-to-br from-violet-950/20 via-background to-cyan-950/20 pointer-events-none" />
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 gradient-bg pointer-events-none" />
+      
+      {/* Noise texture overlay for depth */}
+      <div className="fixed inset-0 noise-overlay pointer-events-none opacity-50" />
 
       {/* Main layout */}
       <div className="relative z-10 flex flex-col h-screen">
         {/* Header */}
-        <header className="glass-panel m-4 mb-0 p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-cyan-500 flex items-center justify-center">
-              <SparklesIcon className="w-5 h-5 text-white" />
+        <header className="glass-panel m-4 mb-0 p-5 flex items-center justify-between noise-overlay">
+          <div className="flex items-center gap-4">
+            {/* Animated logo */}
+            <div className="relative group">
+              <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-[oklch(0.65_0.22_290)] to-[oklch(0.72_0.18_195)] blur-lg opacity-50 group-hover:opacity-75 transition-opacity" />
+              <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-[oklch(0.65_0.22_290)] to-[oklch(0.72_0.18_195)] flex items-center justify-center shadow-lg">
+                <SparklesIcon className="w-6 h-6 text-white" />
+              </div>
             </div>
             <div>
-              <h1 className="text-lg font-semibold">Creative Studio</h1>
-              <p className="text-xs text-muted-foreground">AI-Powered Image Generation & Editing</p>
+              <h1 className="text-xl font-display font-bold tracking-tight text-gradient">Creative Studio</h1>
+              <p className="text-sm text-muted-foreground font-medium">AI-Powered Image Generation & Editing</p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="text-xs text-muted-foreground">
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-xs mr-1">Ctrl+Z</kbd> Undo
-              <kbd className="px-1.5 py-0.5 rounded bg-white/10 text-xs ml-3 mr-1">Ctrl+Shift+Z</kbd> Redo
-            </span>
-            <div className="text-xs text-muted-foreground font-mono">ID: {deviceId.slice(0, 8)}...</div>
+          <div className="flex items-center gap-6">
+            <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
+              <kbd className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-mono">⌘Z</kbd>
+              <span>Undo</span>
+              <kbd className="px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-xs font-mono ml-2">⌘⇧Z</kbd>
+              <span>Redo</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs text-muted-foreground font-mono">{deviceId.slice(0, 8)}</span>
+            </div>
           </div>
         </header>
 
         {/* Main content */}
-        <div className="flex-1 flex gap-4 p-4 overflow-hidden">
+        <div className="flex-1 flex gap-5 p-5 pt-4 overflow-hidden">
           {/* Left: Config Panel */}
           <ConfigPanel
             onGenerate={handleGenerate}
@@ -380,3 +403,4 @@ function SparklesIcon({ className }: { className?: string }) {
     </svg>
   )
 }
+

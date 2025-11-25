@@ -75,18 +75,28 @@ export function ExportFooter({ job }: ExportFooterProps) {
   const currentPreset = EXPORT_PRESETS.find((p) => p.name === selectedPreset)
 
   return (
-    <footer className="glass-panel m-4 mt-0 p-4 flex items-center justify-between flex-wrap gap-4">
+    <footer className="glass-panel m-5 mt-0 p-5 flex items-center justify-between flex-wrap gap-4 noise-overlay">
       {/* Info */}
-      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-        <span>Powered by Gemini 3 Pro</span>
+      <div className="flex items-center gap-4 text-sm">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-[oklch(0.68_0.2_150)] animate-pulse" />
+          <span className="text-muted-foreground font-medium">Powered by</span>
+          <span className="text-gradient font-semibold">Gemini 3 Pro</span>
+        </div>
         {job && (
-          <>
-            <span className="w-1 h-1 rounded-full bg-muted-foreground" />
-            <span>
-              {job.settings?.imageSize || "1K"} • {job.settings?.aspectRatio || "1:1"} •{" "}
-              {job.settings?.outputFormat?.toUpperCase() || "PNG"}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/8">
+            <span className="text-xs font-mono text-muted-foreground">
+              {job.settings?.imageSize || "1K"}
             </span>
-          </>
+            <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
+            <span className="text-xs font-mono text-muted-foreground">
+              {job.settings?.aspectRatio || "1:1"}
+            </span>
+            <span className="w-1 h-1 rounded-full bg-muted-foreground/50" />
+            <span className="text-xs font-mono text-muted-foreground uppercase">
+              {job.settings?.outputFormat || "PNG"}
+            </span>
+          </div>
         )}
       </div>
 
@@ -94,15 +104,15 @@ export function ExportFooter({ job }: ExportFooterProps) {
       <div className="flex items-center gap-3">
         {/* Export Preset Selector */}
         <Select value={selectedPreset} onValueChange={setSelectedPreset}>
-          <SelectTrigger className="w-[180px] h-9 text-xs bg-background/50 border-white/10">
+          <SelectTrigger className="w-[180px] h-10 text-sm bg-white/5 border-white/10 hover:border-white/20 transition-colors">
             <SelectValue placeholder="Export format" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-[oklch(0.14_0.018_275)] border-white/10 backdrop-blur-xl">
             <SelectItem value="original">Original</SelectItem>
             {EXPORT_PRESETS.map((preset) => (
               <SelectItem key={preset.name} value={preset.name}>
                 <span className="flex items-center gap-2">
-                  <PlatformIcon platform={preset.platform} className="w-3 h-3" />
+                  <PlatformIcon platform={preset.platform} className="w-4 h-4" />
                   {preset.name}
                 </span>
               </SelectItem>
@@ -111,13 +121,13 @@ export function ExportFooter({ job }: ExportFooterProps) {
         </Select>
 
         {/* Quick export buttons */}
-        <div className="hidden sm:flex gap-1">
+        <div className="hidden sm:flex gap-1.5 p-1 rounded-lg bg-white/3 border border-white/8">
           {EXPORT_PRESETS.slice(0, 3).map((preset) => (
             <button
               key={preset.name}
               onClick={() => handleDownload(preset)}
               disabled={!canExport || isExporting}
-              className="p-2 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-30 transition-all"
+              className="p-2 rounded-md hover:bg-white/10 disabled:opacity-30 transition-all"
               title={preset.name}
             >
               <PlatformIcon platform={preset.platform} className="w-4 h-4" />
@@ -130,9 +140,9 @@ export function ExportFooter({ job }: ExportFooterProps) {
           size="sm"
           disabled={!canExport}
           onClick={handleCopyLink}
-          className="border-white/10 hover:bg-white/5 bg-transparent"
+          className="h-10 border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
         >
-          {copied ? <CheckIcon className="w-4 h-4 mr-2 text-emerald-400" /> : <LinkIcon className="w-4 h-4 mr-2" />}
+          {copied ? <CheckIcon className="w-4 h-4 mr-2 text-[oklch(0.75_0.18_150)]" /> : <LinkIcon className="w-4 h-4 mr-2" />}
           {copied ? "Copied!" : "Copy Link"}
         </Button>
 
@@ -140,7 +150,7 @@ export function ExportFooter({ job }: ExportFooterProps) {
           size="sm"
           disabled={!canExport || isExporting}
           onClick={() => handleDownload(currentPreset)}
-          className="bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white border-0"
+          className="h-10 px-5 font-semibold bg-gradient-to-r from-[oklch(0.65_0.22_290)] to-[oklch(0.72_0.18_195)] hover:from-[oklch(0.7_0.22_290)] hover:to-[oklch(0.77_0.18_195)] text-white border-0 shadow-lg hover:shadow-[0_0_30px_oklch(0.65_0.22_290/0.3),0_0_30px_oklch(0.72_0.18_195/0.3)] transition-all duration-300"
         >
           {isExporting ? (
             <LoaderIcon className="w-4 h-4 mr-2 animate-spin" />

@@ -82,17 +82,17 @@ export function PreviewCanvas({
   const cssFilter = useMemo(() => buildCssFilter(adjustments), [adjustments])
 
   return (
-    <div className="flex-1 glass-panel p-5 flex flex-col">
+    <div className="flex-1 glass-panel p-6 flex flex-col noise-overlay">
       {/* Header with status and undo/redo */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-medium">Preview</h2>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between mb-5">
+        <h2 className="text-sm font-semibold tracking-wide text-foreground/90 uppercase">Preview</h2>
+        <div className="flex items-center gap-3">
           {/* Undo/Redo buttons */}
-          <div className="flex gap-1 mr-2">
+          <div className="flex gap-1 p-1 rounded-lg bg-white/3 border border-white/8">
             <button
               onClick={onUndo}
               disabled={!canUndo}
-              className="p-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="p-2 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               title="Undo (Ctrl+Z)"
             >
               <UndoIcon className="w-4 h-4" />
@@ -100,7 +100,7 @@ export function PreviewCanvas({
             <button
               onClick={onRedo}
               disabled={!canRedo}
-              className="p-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="p-2 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               title="Redo (Ctrl+Shift+Z)"
             >
               <RedoIcon className="w-4 h-4" />
@@ -111,40 +111,56 @@ export function PreviewCanvas({
       </div>
 
       {/* Main preview area */}
-      <div className="flex-1 flex items-center justify-center rounded-xl bg-black/20 border border-white/5 overflow-hidden relative">
+      <div className="flex-1 flex items-center justify-center rounded-2xl bg-black/30 border border-white/5 overflow-hidden relative backdrop-blur-sm">
+        {/* Checkered background for transparency */}
+        <div 
+          className="absolute inset-0 opacity-20"
+          style={{
+            backgroundImage: `linear-gradient(45deg, #1a1a2e 25%, transparent 25%), 
+                              linear-gradient(-45deg, #1a1a2e 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #1a1a2e 75%), 
+                              linear-gradient(-45deg, transparent 75%, #1a1a2e 75%)`,
+            backgroundSize: '20px 20px',
+            backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+          }}
+        />
+        
         {/* Generating state with animated message */}
         {isGenerating && !job?.previewUrl && (
-          <div className="flex flex-col items-center gap-4">
+          <div className="relative z-10 flex flex-col items-center gap-6">
             <div className="relative">
-              <div className="w-16 h-16 rounded-full border-2 border-cyan-500/30 border-t-cyan-500 animate-spin" />
+              {/* Outer glow */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[oklch(0.65_0.22_290)] to-[oklch(0.72_0.18_195)] blur-xl opacity-30 animate-pulse" />
+              {/* Outer ring */}
+              <div className="w-20 h-20 rounded-full border-2 border-[oklch(0.72_0.18_195/0.3)] border-t-[oklch(0.72_0.18_195)] animate-spin" />
+              {/* Inner ring */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div
-                  className="w-8 h-8 rounded-full border-2 border-violet-500/30 border-b-violet-500 animate-spin"
-                  style={{ animationDirection: "reverse" }}
+                  className="w-10 h-10 rounded-full border-2 border-[oklch(0.65_0.22_290/0.3)] border-b-[oklch(0.65_0.22_290)] animate-spin"
+                  style={{ animationDirection: "reverse", animationDuration: "0.8s" }}
                 />
               </div>
             </div>
             <div className="text-center">
-              <p className="text-sm text-muted-foreground animate-pulse">{progressMessage}</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">This may take a moment</p>
+              <p className="text-base font-medium text-foreground/80">{progressMessage}</p>
+              <p className="text-sm text-muted-foreground mt-2">This may take a moment</p>
             </div>
-            {/* Low-res preview skeleton */}
-            <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-cyan-500/5 animate-pulse" />
           </div>
         )}
 
         {/* Preview image */}
         {currentImageSrc && (
-          <div className="relative w-full h-full flex items-center justify-center">
+          <div className={`relative z-10 w-full h-full flex items-center justify-center p-4 ${isGenerating ? 'blur-sm opacity-50' : ''} transition-all duration-300`}>
             <img
               src={currentImageSrc}
               alt="Generated preview"
-              className="max-w-full max-h-full object-contain"
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
               style={hasAdjustmentsChanges ? { filter: cssFilter } : undefined}
             />
             {/* HD badge if full resolution */}
             {job?.settings?.imageSize === "4K" && job?.status === "done" && (
-              <div className="absolute top-3 right-3 px-2 py-1 rounded-md bg-amber-500/80 text-white text-xs font-medium">
+              <div className="absolute top-5 right-5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[oklch(0.75_0.18_85)] to-[oklch(0.7_0.2_45)] text-white text-xs font-bold shadow-lg flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-white/80" />
                 4K HD
               </div>
             )}
@@ -194,20 +210,24 @@ export function PreviewCanvas({
 
       {/* Enhanced prompt display */}
       {job?.enhancedPrompt && (
-        <div className="mt-4 p-3 rounded-lg bg-black/20 border border-white/5">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs text-muted-foreground">Enhanced Prompt</p>
+        <div className="mt-5 p-4 rounded-xl bg-black/20 border border-white/8 backdrop-blur-sm">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-[oklch(0.72_0.18_195)]" />
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Enhanced Prompt</p>
+            </div>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(job.enhancedPrompt || "")
                 toast.success("Prompt copied to clipboard!")
               }}
-              className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium text-[oklch(0.8_0.15_195)] hover:bg-[oklch(0.72_0.18_195/0.15)] transition-colors"
             >
+              <CopyIcon className="w-3.5 h-3.5" />
               Copy
             </button>
           </div>
-          <p className="text-sm text-foreground/80 line-clamp-3">{job.enhancedPrompt}</p>
+          <p className="text-sm text-foreground/80 leading-relaxed line-clamp-3">{job.enhancedPrompt}</p>
         </div>
       )}
     </div>
@@ -216,22 +236,33 @@ export function PreviewCanvas({
 
 function StatusBadge({ status }: { status?: Job["status"] }) {
   const styles = {
-    queued: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-    processing: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
-    done: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-    failed: "bg-red-500/20 text-red-400 border-red-500/30",
+    queued: "bg-[oklch(0.75_0.18_85/0.15)] text-[oklch(0.8_0.16_85)] border-[oklch(0.75_0.18_85/0.3)]",
+    processing: "bg-[oklch(0.72_0.18_195/0.15)] text-[oklch(0.8_0.15_195)] border-[oklch(0.72_0.18_195/0.3)]",
+    done: "bg-[oklch(0.68_0.2_150/0.15)] text-[oklch(0.75_0.18_150)] border-[oklch(0.68_0.2_150/0.3)]",
+    failed: "bg-[oklch(0.55_0.2_20/0.15)] text-[oklch(0.7_0.18_20)] border-[oklch(0.55_0.2_20/0.3)]",
   }
   const styleKey = status && styles[status] ? status : "queued"
   const label =
     status && status.length > 0 ? status.charAt(0).toUpperCase() + status.slice(1) : "Queued"
 
   return (
-    <span className={`px-2 py-1 text-xs rounded-full border ${styles[styleKey]}`}>
+    <span className={`px-3 py-1.5 text-xs font-semibold rounded-lg border flex items-center gap-2 ${styles[styleKey]}`}>
       {styleKey === "processing" && (
-        <span className="inline-block w-1.5 h-1.5 rounded-full bg-current mr-1.5 animate-pulse" />
+        <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+      )}
+      {styleKey === "done" && (
+        <span className="w-2 h-2 rounded-full bg-current" />
       )}
       {label}
     </span>
+  )
+}
+
+function CopyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
   )
 }
 

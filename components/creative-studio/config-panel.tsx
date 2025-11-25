@@ -253,56 +253,62 @@ export function ConfigPanel({
   }
 
   return (
-    <div className="w-96 flex-shrink-0 glass-panel p-5 flex flex-col gap-4 overflow-y-auto">
+    <div className="w-[400px] flex-shrink-0 glass-panel p-6 flex flex-col gap-5 overflow-y-auto noise-overlay">
       {/* Quick Presets */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Quick Presets</Label>
+      <div className="space-y-3">
+        <Label className="text-sm font-semibold tracking-wide text-foreground/90 uppercase">Quick Presets</Label>
         <div className="grid grid-cols-4 gap-2">
           {QUICK_PRESETS.map((preset) => (
             <button
               key={preset.id}
               onClick={() => applyPreset(preset)}
-              className={`p-3 rounded-lg border text-center transition-all ${
+              className={`group p-3 rounded-xl border text-center transition-all duration-200 ${
                 settings.preset === preset.id
-                  ? "border-cyan-500 bg-cyan-500/20 text-cyan-400"
-                  : "border-white/10 hover:border-white/20"
+                  ? "border-[oklch(0.72_0.18_195)] bg-[oklch(0.72_0.18_195/0.15)] text-[oklch(0.8_0.15_195)] shadow-[0_0_20px_oklch(0.72_0.18_195/0.2)]"
+                  : "border-white/8 bg-white/3 hover:border-white/15 hover:bg-white/6"
               }`}
             >
-              <PresetIcon type={preset.icon} className="w-5 h-5 mx-auto mb-1" />
-              <span className="text-xs">{preset.name}</span>
+              <PresetIcon type={preset.icon} className={`w-5 h-5 mx-auto mb-1.5 transition-transform group-hover:scale-110 ${
+                settings.preset === preset.id ? "text-[oklch(0.8_0.15_195)]" : "text-muted-foreground"
+              }`} />
+              <span className="text-xs font-medium">{preset.name}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Image Input Area */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Input Image</Label>
+      <div className="space-y-3">
+        <Label className="text-sm font-semibold tracking-wide text-foreground/90 uppercase">Input Image</Label>
         {uploadedPreview ? (
-          <div className="relative group">
+          <div className="relative group rounded-xl overflow-hidden border border-white/10">
             <img
               src={uploadedPreview || "/placeholder.svg"}
               alt="Uploaded"
-              className="w-full h-32 object-cover rounded-lg"
+              className="w-full h-36 object-cover"
             />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
             <button
               onClick={clearUpload}
-              className="absolute top-2 right-2 p-1 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+              className="absolute top-3 right-3 p-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/20 hover:bg-red-500/80 hover:border-red-400/50 transition-all"
             >
               <XIcon className="w-4 h-4" />
             </button>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <label
-              className="flex flex-col items-center justify-center h-28 border-2 border-dashed border-white/10 rounded-lg cursor-pointer hover:border-white/20 transition-colors"
+              className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-white/10 rounded-xl cursor-pointer hover:border-[oklch(0.72_0.18_195/0.5)] hover:bg-[oklch(0.72_0.18_195/0.05)] transition-all duration-200 group"
               onDrop={handleDrop}
               onDragOver={handleDragOver}
             >
-              <UploadIcon className="w-6 h-6 text-muted-foreground mb-2" />
-              <span className="text-xs text-muted-foreground">
+              <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mb-3 group-hover:bg-[oklch(0.72_0.18_195/0.1)] transition-colors">
+                <UploadIcon className="w-6 h-6 text-muted-foreground group-hover:text-[oklch(0.72_0.18_195)]" />
+              </div>
+              <span className="text-sm text-muted-foreground font-medium">
                 {isUploading ? "Uploading..." : "Drop image or click to upload"}
               </span>
+              <span className="text-xs text-muted-foreground/60 mt-1">PNG, JPG, WebP up to 10MB</span>
               <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
             </label>
             <div className="flex gap-2">
@@ -311,26 +317,26 @@ export function ConfigPanel({
                 placeholder="Or paste image URL..."
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                className="flex-1 px-3 py-2 text-xs bg-background/50 border border-white/10 rounded-lg"
+                className="glass-input flex-1 text-sm"
               />
               <Button
                 size="sm"
                 variant="outline"
                 onClick={handleUrlPaste}
                 disabled={!urlInput.trim() || isUploading}
-                className="border-white/10 bg-transparent"
+                className="border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
               >
                 Load
               </Button>
             </div>
             {/* Sample Images */}
-            <div className="flex gap-2">
-              <span className="text-xs text-muted-foreground">Samples:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground">Try:</span>
               {[1, 2, 3].map((i) => (
                 <button
                   key={i}
                   onClick={() => setUrlInput(`/placeholder.svg?height=512&width=512&query=sample product image ${i}`)}
-                  className="w-8 h-8 rounded border border-white/10 hover:border-white/30 overflow-hidden"
+                  className="w-9 h-9 rounded-lg border border-white/10 hover:border-[oklch(0.72_0.18_195/0.5)] hover:ring-2 hover:ring-[oklch(0.72_0.18_195/0.2)] overflow-hidden transition-all"
                 >
                   <img
                     src={`/abstract-colorful-swirl.png?height=32&width=32&query=sample ${i}`}
@@ -665,26 +671,26 @@ export function ConfigPanel({
       </Tabs>
 
       {/* Generate Buttons */}
-      <div className="space-y-2 pt-2 border-t border-white/10">
+      <div className="space-y-3 pt-4 border-t border-white/8 mt-auto">
         <Button
           onClick={() => handleSubmit(false)}
           disabled={previewDisabled}
           title={!canSubmit ? "Add a prompt or select a tool action" : undefined}
-          className="w-full bg-gradient-to-r from-violet-600 to-cyan-600 hover:from-violet-500 hover:to-cyan-500 text-white border-0"
+          className="w-full h-12 text-base font-semibold bg-gradient-to-r from-[oklch(0.65_0.22_290)] to-[oklch(0.72_0.18_195)] hover:from-[oklch(0.7_0.22_290)] hover:to-[oklch(0.77_0.18_195)] text-white border-0 shadow-lg hover:shadow-[0_0_30px_oklch(0.65_0.22_290/0.3),0_0_30px_oklch(0.72_0.18_195/0.3)] transition-all duration-300"
         >
           {isGenerating ? (
             <span className="flex items-center gap-2">
-              <LoaderIcon className="w-4 h-4 animate-spin" />
+              <LoaderIcon className="w-5 h-5 animate-spin" />
               {currentJob?.progressMessage || "Processing..."}
             </span>
           ) : hasToolConfigured && hasSourceImage ? (
             <span className="flex items-center gap-2">
-              <WandIcon className="w-4 h-4" />
+              <WandIcon className="w-5 h-5" />
               Apply Tool
             </span>
           ) : (
             <span className="flex items-center gap-2">
-              <SparklesIcon className="w-4 h-4" />
+              <SparklesIcon className="w-5 h-5" />
               Generate Preview
             </span>
           )}
@@ -693,12 +699,12 @@ export function ConfigPanel({
           onClick={handleHdClick}
           disabled={hdDisabled}
           variant="outline"
-          className="w-full border-white/10 hover:bg-white/5"
+          className="w-full h-11 font-semibold border-white/10 bg-white/3 hover:bg-white/8 hover:border-[oklch(0.75_0.18_85/0.5)] group transition-all duration-200"
         >
           <span className="flex items-center gap-2">
-            <HDIcon className="w-4 h-4" />
-            Generate HD (4K)
-            <span className="text-amber-400 text-xs">Slower</span>
+            <HDIcon className="w-4 h-4 group-hover:text-[oklch(0.8_0.16_85)]" />
+            <span>Generate HD</span>
+            <span className="px-2 py-0.5 rounded-md bg-[oklch(0.75_0.18_85/0.15)] text-[oklch(0.8_0.16_85)] text-xs font-medium border border-[oklch(0.75_0.18_85/0.3)]">4K</span>
           </span>
         </Button>
       </div>
