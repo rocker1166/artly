@@ -306,6 +306,7 @@ export function CreativeStudio() {
               <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-[oklch(0.65_0.22_290)] to-[oklch(0.72_0.18_195)] flex items-center justify-center shadow-lg">
                 <SparklesIcon className="w-6 h-6 text-white" />
               </div>
+
             </div>
             <div>
               <h1 className="text-xl font-display font-bold tracking-tight text-gradient">Creative Studio</h1>
@@ -403,4 +404,5 @@ function SparklesIcon({ className }: { className?: string }) {
     </svg>
   )
 }
+
 

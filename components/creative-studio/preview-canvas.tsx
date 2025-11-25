@@ -42,6 +42,8 @@ export function PreviewCanvas({
 }: PreviewCanvasProps) {
   const [progressMessage, setProgressMessage] = useState(PROGRESS_MESSAGES[0])
   const [messageIndex, setMessageIndex] = useState(0)
+  const [isPromptOpen, setIsPromptOpen] = useState(true)
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -87,6 +89,14 @@ export function PreviewCanvas({
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-sm font-semibold tracking-wide text-foreground/90 uppercase">Preview</h2>
         <div className="flex items-center gap-3">
+          {job?.enhancedPrompt && (
+            <button
+              onClick={() => setIsPromptOpen((prev) => !prev)}
+              className="px-3 py-1.5 text-xs font-semibold rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-all"
+            >
+              Enhanced Prompt {isPromptOpen ? "▾" : "▸"}
+            </button>
+          )}
           {/* Undo/Redo buttons */}
           <div className="flex gap-1 p-1 rounded-lg bg-white/3 border border-white/8">
             <button
@@ -150,13 +160,24 @@ export function PreviewCanvas({
 
         {/* Preview image */}
         {currentImageSrc && (
-          <div className={`relative z-10 w-full h-full flex items-center justify-center p-4 ${isGenerating ? 'blur-sm opacity-50' : ''} transition-all duration-300`}>
+          <div
+            className={`relative z-10 w-full h-full flex items-center justify-center p-4 ${
+              isGenerating ? "blur-sm opacity-50" : ""
+            } transition-all duration-300`}
+          >
             <img
               src={currentImageSrc}
               alt="Generated preview"
-              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl cursor-zoom-in"
               style={hasAdjustmentsChanges ? { filter: cssFilter } : undefined}
+              onClick={() => setIsLightboxOpen(true)}
             />
+            <button
+              onClick={() => setIsLightboxOpen(true)}
+              className="absolute top-4 right-4 px-3 py-1.5 text-xs font-semibold rounded-full bg-black/60 border border-white/10 text-white hover:bg-black/80 transition"
+            >
+              Full Screen
+            </button>
             {/* HD badge if full resolution */}
             {job?.settings?.imageSize === "4K" && job?.status === "done" && (
               <div className="absolute top-5 right-5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[oklch(0.75_0.18_85)] to-[oklch(0.7_0.2_45)] text-white text-xs font-bold shadow-lg flex items-center gap-1.5">
@@ -209,7 +230,7 @@ export function PreviewCanvas({
       </div>
 
       {/* Enhanced prompt display */}
-      {job?.enhancedPrompt && (
+      {job?.enhancedPrompt && isPromptOpen && (
         <div className="mt-5 p-4 rounded-xl bg-black/20 border border-white/8 backdrop-blur-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -227,7 +248,19 @@ export function PreviewCanvas({
               Copy
             </button>
           </div>
-          <p className="text-sm text-foreground/80 leading-relaxed line-clamp-3">{job.enhancedPrompt}</p>
+          <p className="text-sm text-foreground/80 leading-relaxed">{job.enhancedPrompt}</p>
+        </div>
+      )}
+
+      {isLightboxOpen && currentImageSrc && (
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-lg flex items-center justify-center p-6">
+          <button
+            className="absolute top-6 right-6 text-white/70 hover:text-white"
+            onClick={() => setIsLightboxOpen(false)}
+          >
+            <XIcon className="w-6 h-6" />
+          </button>
+          <img src={currentImageSrc} alt="Preview large" className="max-h-[90vh] max-w-[90vw] object-contain rounded-2xl" />
         </div>
       )}
     </div>
