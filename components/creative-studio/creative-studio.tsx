@@ -456,19 +456,7 @@ export function CreativeStudio({ onLogoClick }: CreativeStudioProps = {}) {
           <div className="flex items-center gap-3 flex-wrap justify-end">
             <div className="flex items-center gap-2">
               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className={`border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 ${
-                      customGeminiKey ? "text-emerald-300 border-emerald-400/40" : ""
-                    }`}
-                    aria-label="Gemini key status"
-                  >
-                    <KeyRound className="size-4" />
-                  </Button>
-                </TooltipTrigger>
+               
                 <TooltipContent side="bottom" className="max-w-xs text-left">
                   {customGeminiKey
                     ? "Your personal Gemini API key is active. We'll fall back to the studio key automatically if your key fails."

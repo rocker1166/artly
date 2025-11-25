@@ -105,20 +105,7 @@ export function ExportFooter({ job }: ExportFooterProps) {
         {/* Export Preset Selector */}
        
 
-        {/* Quick export buttons */}
-        <div className="hidden sm:flex gap-1.5 p-1 rounded-lg bg-white/3 border border-white/8">
-          {EXPORT_PRESETS.slice(0, 3).map((preset) => (
-            <button
-              key={preset.name}
-              onClick={() => handleDownload(preset)}
-              disabled={!canExport || isExporting}
-              className="p-2 rounded-md hover:bg-white/10 disabled:opacity-30 transition-all"
-              title={preset.name}
-            >
-              <PlatformIcon platform={preset.platform} className="w-4 h-4" />
-            </button>
-          ))}
-        </div>
+        
 
         <Button
           variant="outline"

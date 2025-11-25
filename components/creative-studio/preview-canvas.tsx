@@ -112,24 +112,7 @@ export function PreviewCanvas({
             </button>
           )}
           {/* Undo/Redo buttons */}
-          <div className="flex gap-1 p-1 rounded-lg bg-white/3 border border-white/8">
-            <button
-              onClick={onUndo}
-              disabled={!canUndo}
-              className="p-2 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              title="Undo (Ctrl+Z)"
-            >
-              <UndoIcon className="w-4 h-4" />
-            </button>
-            <button
-              onClick={onRedo}
-              disabled={!canRedo}
-              className="p-2 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-              title="Redo (Ctrl+Shift+Z)"
-            >
-              <RedoIcon className="w-4 h-4" />
-            </button>
-          </div>
+        
           {job && <StatusBadge status={job.status} />}
         </div>
       </div>
